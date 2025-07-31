@@ -1,0 +1,41 @@
+name: Android CI - Debug Build Only
+
+on:
+  push:
+    branches: ["develop"]
+  pull_request:
+    branches: ["develop"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "zulu"
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
+
+      - name: Locate Debug APK
+        id: locate_apk
+        run: |
+          apk_path=$(find app/build/outputs/apk/debug -name "*.apk" | head -n 1)
+          echo "apk_path=$apk_path" >> $GITHUB_OUTPUT
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk
+          path: ${{ steps.locate_apk.outputs.apk_path }}
